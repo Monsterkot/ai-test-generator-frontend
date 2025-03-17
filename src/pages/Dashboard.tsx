@@ -1,15 +1,23 @@
-import { useEffect, useState } from "react";
+import {useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 export default function DashboardPage() {
   const [scrollY, setScrollY] = useState(0);
-
+  const {user} = useAuth();
+  const navigate = useNavigate();
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/home");
+    }
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">

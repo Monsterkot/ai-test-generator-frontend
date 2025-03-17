@@ -1,23 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
 
 const RegisterPage = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState({
+  const [errors, setErrors] = useState<{ server?: string; username?: string; email?: string; password?: string }>({
     username: "",
     email: "",
     password: "",
   });
+  const {user, register} = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+        if (user) {
+          navigate("/home");
+        }
+      }, [user, navigate]);
+
   const validateEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
-
   const validatePassword = (password: string) => password.length >= 8;
-
   const validateUsername = (username: string) => username.trim() !== "";
 
   const handleInputChange = (
@@ -49,6 +55,15 @@ const RegisterPage = () => {
     !errors.email &&
     !errors.password;
 
+    const handleRegister = async () => {
+      try {
+        await register(username, email, password);
+        navigate("/home");
+      } catch (error: any) {
+        setErrors({server: error.response?.data?.message || "Authorization error"});
+      }
+    };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-6">
       <button
@@ -61,7 +76,6 @@ const RegisterPage = () => {
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
         className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md"
       >
         <h2 className="text-2xl font-semibold text-center mb-6">Регистрация</h2>
@@ -104,6 +118,7 @@ const RegisterPage = () => {
           whileTap={isFormValid ? { scale: 0.95 } : {}}
           disabled={!isFormValid}
           className={`w-full mt-4 py-3 rounded-lg text-lg font-semibold transition ${isFormValid ? "bg-[#1DB954] text-white cursor-pointer" : "bg-gray-600 cursor-not-allowed"}`}
+          onClick={handleRegister}
         >
           Зарегистрироваться
         </motion.button>

@@ -1,11 +1,25 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { useAuth } from "../hooks/useAuth";
 
-const DashboardPage = () => {
+const HomePage = () => {
+  const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
+  const handleAdmin = () => {
+    navigate("/admin");
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
-      {/* Sidebar */}
       <aside className="w-64 bg-gray-800 p-6 flex flex-col">
         <h1 className="text-xl font-bold text-white mb-6">Test Generator</h1>
         <nav className="flex flex-col gap-4">
@@ -34,15 +48,45 @@ const DashboardPage = () => {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="w-full bg-gray-800 p-4 flex justify-between items-center shadow">
+        <header className="w-full bg-gray-800 p-4 flex justify-between items-center shadow relative">
           <h2 className="text-lg font-semibold">Тесты</h2>
-          <FaUserCircle className="text-3xl cursor-pointer text-gray-400 hover:text-white" />
+
+          {/* Если user загружается, показываем "Загрузка..." */}
+          {user ? (
+            <div className="relative">
+              <div
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={() => setMenuOpen(!menuOpen)}
+              >
+                <FaUserCircle className="text-3xl text-gray-400 hover:text-white" />
+                <span className="text-white">{user.name}</span>
+              </div>
+
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-gray-700 shadow-lg rounded-lg overflow-hidden">
+                  {user.role === "ADMIN" && (
+                    <button
+                      className="w-full text-left px-4 py-2 text-white hover:bg-gray-600"
+                      onClick={handleAdmin}
+                    >
+                      🛠️ Админ-панель
+                    </button>
+                  )}
+                  <button
+                    className="w-full text-left px-4 py-2 text-white hover:bg-gray-600"
+                    onClick={handleLogout}
+                  >
+                    Выйти
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <span className="text-gray-400">Загрузка...</span>
+          )}
         </header>
 
-        {/* Content */}
         <div className="flex-1 flex flex-col justify-center items-center text-center">
           <img
             src="src/images/empty-folder.png"
@@ -68,4 +112,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default HomePage;

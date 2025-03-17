@@ -1,15 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {},
-  );
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    server?: string;
+  }>({});
   const navigate = useNavigate();
+  const { user, login } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/home");
+    }
+  }, [user, navigate]);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -20,7 +30,7 @@ const LoginPage = () => {
     field: "email" | "password",
   ) => {
     const value = e.target.value;
-    setErrors((prev) => ({ ...prev, [field]: "" }));
+    setErrors((prev) => ({ ...prev, [field]: "", server: "" })); // Сброс ошибки сервера при изменении полей
 
     if (field === "email" && !validateEmail(value)) {
       setErrors((prev) => ({ ...prev, email: "Введите корректный email" }));
@@ -36,6 +46,23 @@ const LoginPage = () => {
     if (field === "password") setPassword(value);
   };
 
+  const handleLogin = async () => {
+    try {
+      await login(email, password);
+      navigate("/home");
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message;
+
+      if (errorMessage === "User not found") {
+        setErrors({ email: "Пользователь не найден" });
+      } else if (errorMessage === "Invalid password") {
+        setErrors({ password: "Неверный пароль" });
+      } else {
+        setErrors({ server: "Ошибка авторизации. Попробуйте снова." });
+      }
+    }
+  };
+
   const isFormValid =
     email && password.length >= 8 && !errors.email && !errors.password;
 
@@ -49,7 +76,7 @@ const LoginPage = () => {
         <span>Назад</span>
       </button>
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-gray-800 p-8 rounded-lg shadow-lg w-96"
       >
@@ -78,13 +105,22 @@ const LoginPage = () => {
             <p className="text-red-500 text-sm mt-1">{errors.password}</p>
           )}
         </div>
+        {errors.server && (
+          <p className="text-red-500 text-sm mb-4 text-center">
+            {errors.server}
+          </p>
+        )}
         <motion.button
           whileHover={{ scale: isFormValid ? 1.05 : 1 }}
           whileTap={{ scale: isFormValid ? 0.95 : 1 }}
           transition={{ duration: 0.2 }}
           disabled={!isFormValid}
-          className={`w-full p-3 font-bold rounded ${isFormValid ? "bg-green-500 hover:bg-green-600 text-white" : "bg-gray-600 text-gray-400 cursor-not-allowed"}`}
-          onClick={() => navigate("/dashboard")}
+          className={`w-full p-3 font-bold rounded ${
+            isFormValid
+              ? "bg-green-500 hover:bg-green-600 text-white cursor-pointer"
+              : "bg-gray-600 text-gray-400 cursor-not-allowed"
+          }`}
+          onClick={handleLogin}
         >
           Войти
         </motion.button>
